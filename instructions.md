@@ -81,6 +81,11 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - `!pte` - Page table entry analysis
    - `!pfn` - Page frame number database
    - `.trap` / `.cxr` - Switch to trap/context frame for accurate register state
+   - `!cpuinfo` - CPU information for all processors
+   - `!sysinfo cpuinfo` - Detailed CPU and system information
+   - `!sysinfo cpumicrocode` - CPU microcode version information (initial and cached)
+   - `lmvm mcupdate_*` - Microcode update module information
+   - `r @$prcb; dt nt!_KPRCB @$prcb` - Processor Control Block details
 
 ## Analysis Workflow
 
@@ -90,8 +95,72 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
 4. **Faulting Instruction**: Disassemble around the crash point
 5. **Data Inspection**: Dump all relevant structures and parameters
 6. **Memory Verification**: Validate pointers and memory regions
-7. **Documentation Check**: Cross-reference with MS documentation
-8. **Root Cause Synthesis**: Formulate a technical explanation of WHY the crash occurred using only evidence. If you don't know or cannot reach the conclusion, tell so
+7. **CPU and Microcode Analysis**: Gather processor and microcode information
+8. **Documentation Check**: Cross-reference with MS documentation
+9. **Root Cause Synthesis**: Formulate a technical explanation of WHY the crash occurred using only evidence. If you don't know or cannot reach the conclusion, tell so
+
+## CPU and Microcode Analysis
+
+Always gather comprehensive CPU and microcode information:
+
+1. **CPU Identification**
+   - Use `!cpuinfo` to get CPU family, model, stepping for all processors
+   - Use `!sysinfo cpuinfo` or registry query for detailed processor information
+   - Examine `dt nt!_KPRCB @$prcb` for processor control block details
+   - Note: Manufacturer, model name, clock speed, core count
+
+2. **Microcode Information**
+   - Use `!sysinfo cpumicrocode` to get microcode versions directly
+   - List microcode update module: `lmvm mcupdate_AuthenticAMD` or `lmvm mcupdate_GenuineIntel`
+   - Check PRCB signature for microcode revision
+   - Document initial vs cached microcode versions
+   - Note processor family, model, stepping from microcode output
+
+3. **Relevance Assessment**
+   - Determine if CPU/microcode could contribute to crash
+   - Check for known CPU errata related to crash symptoms
+   - Consider architecture-specific factors (NUMA, virtualization, core count)
+   - Document whether crash is CPU-related or software-only
+
+4. **Output Requirements**
+   - Include CPU and microcode information in ANALYSIS_REPORT.md as a dedicated section
+   - Place after "Memory State" section and before "What This Is NOT" section
+   - Include full processor identification (vendor, family, model, stepping)
+   - Document microcode revision and update status (initial vs cached)
+   - Assess relevance to crash (hardware vs software issue)
+
+## Finding the Debugger (cdb.exe)
+
+CDB (Command-Line Debugger) may be in different locations depending on installation:
+
+1. **Search Common Locations**:
+   ```bash
+   # Search Program Files for cdb.exe
+   find /c/Program\ Files* -name "cdb.exe" 2>/dev/null
+   
+   # Prefer x64/amd64 version for 64-bit dumps
+   find /c/Program\ Files* -name "cdb.exe" 2>/dev/null | grep -E "(x64|amd64)"
+   ```
+
+2. **Typical Locations**:
+   - WinDbg Preview: `/c/Program Files/WindowsApps/Microsoft.WinDbg_*/amd64/cdb.exe`
+   - Windows SDK: `/c/Program Files (x86)/Windows Kits/10/Debuggers/x64/cdb.exe`
+   - Standalone: `/c/Program Files/Debugging Tools for Windows (x64)/cdb.exe`
+
+3. **Usage Pattern**:
+   ```bash
+   # Store path in variable for reuse
+   CDB="/c/Program Files/WindowsApps/Microsoft.WinDbg_*/amd64/cdb.exe"
+   
+   # Execute with timeout for long operations
+   "$CDB" -z "path/to/dump.dmp" -c "!analyze -v; q"
+   ```
+
+4. **Important Notes**:
+   - Use x64/amd64 version for 64-bit dumps
+   - Set appropriate timeout (120000ms = 2 minutes) for complex commands
+   - Symbol path defaults to `srv*` (Microsoft public symbol server)
+   - Document the debugger path used in thinking.log
 
 ## Output Expectations
 
@@ -100,5 +169,7 @@ Provide analysis that:
 - Explains the chain of events leading to the crash
 - References specific memory addresses, register values, and data structures
 - Cites relevant Windows internals knowledge
+- Includes comprehensive CPU and microcode information
+- Documents all tools and debugger paths used
 
 
