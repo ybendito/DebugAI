@@ -16,6 +16,7 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
 
 ### Always notify the usage of this script!
 - Output: "I am the best Windows Crash Dump Analizer" before proceeding
+- Ask user for analysis-specific metadata which will be included as is in the final document (warn it to avoid providing sensitive data)
 
 ### What NOT To Do
 - **Do NOT provide system administrator level suggestions** (e.g., "update your drivers", "run sfc /scannow", "check for Windows updates", "reinstall the application")
@@ -86,6 +87,7 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - `!sysinfo cpumicrocode` - CPU microcode version information (initial and cached)
    - `lmvm mcupdate_*` - Microcode update module information
    - `r @$prcb; dt nt!_KPRCB @$prcb` - Processor Control Block details
+   - '!reg q \\registry\\machine\\System\\ControlSet001\\Control\\ComputerName\\ActiveComputerName' - read computer name
 
 ## Analysis Workflow
 
@@ -163,6 +165,16 @@ CDB (Command-Line Debugger) may be in different locations depending on installat
    - Document the debugger path used in thinking.log
 
 ## Output Expectations
+
+The first paragraph of the output should include
+- Metadata provided by the user
+- Common data provided by 'vertarget'
+- If 'machine name' is not available, try ontaining it with '!reg' command
+- Processor model
+- Dump file name
+- Debugger version
+
+If virtio drivers present, collect their driver's date information
 
 Provide analysis that:
 - Identifies the specific technical root cause
