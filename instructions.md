@@ -24,6 +24,7 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
 - Do NOT give generic troubleshooting advice
 - Do NOT recommend rebooting or reinstalling as solutions
 - Do NOT blame Balloon device\driver! It is not active
+- Do NOT make claims like "This is a known problem of ..." without providing proofs and references
 
 ### What TO Do - Deep Analysis Methodology
 
@@ -72,7 +73,12 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - Look at IRQLs, wait states, and thread priorities
    - Investigate if the crash relates to synchronization issues
 
-8. **Advanced Commands to Use**
+8 **Driver verifier**
+   - Examine the driver verifier setting with `!verifier`
+   - if verifier is active, check which drivers are verified with `verifier 1` and check whether they make sense
+   - if verifier is active use the data collected by verifier in crash investigation
+
+9. **Advanced Commands to Use**
    - `!irp` - Analyze I/O Request Packets
    - `!devstack` - Device stack information
    - `!object` - Object manager details
@@ -87,7 +93,7 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - `!sysinfo cpumicrocode` - CPU microcode version information (initial and cached)
    - `lmvm mcupdate_*` - Microcode update module information
    - `r @$prcb; dt nt!_KPRCB @$prcb` - Processor Control Block details
-   - '!reg q \\registry\\machine\\System\\ControlSet001\\Control\\ComputerName\\ActiveComputerName' - read computer name
+   - `!reg q \\registry\\machine\\System\\ControlSet001\\Control\\ComputerName\\ActiveComputerName` - read computer name
 
 ## Analysis Workflow
 
@@ -148,6 +154,7 @@ CDB (Command-Line Debugger) may be in different locations depending on installat
    - WinDbg Preview: `/c/Program Files/WindowsApps/Microsoft.WinDbg_*/amd64/cdb.exe`
    - Windows SDK: `/c/Program Files (x86)/Windows Kits/10/Debuggers/x64/cdb.exe`
    - Standalone: `/c/Program Files/Debugging Tools for Windows (x64)/cdb.exe`
+   - Local copy: `/c/dbg/cdb.exe`
 
 3. **Usage Pattern**:
    ```bash
@@ -168,13 +175,14 @@ CDB (Command-Line Debugger) may be in different locations depending on installat
 
 The first paragraph of the output should include
 - Metadata provided by the user
-- Common data provided by 'vertarget'
-- If 'machine name' is not available, try ontaining it with '!reg' command
+- Common data provided by 'vertarget' including uptime
+- If 'machine name' is not available, try obtaining it with '!reg' command
 - Processor model
 - Dump file name
 - Debugger version
 
 If virtio drivers present, collect their driver's date information
+If `!virtio.hv` command (from virtio extension) is available, include it's output
 
 Provide analysis that:
 - Identifies the specific technical root cause
