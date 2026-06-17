@@ -73,10 +73,10 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - Look at IRQLs, wait states, and thread priorities
    - Investigate if the crash relates to synchronization issues
 
-8 **Driver verifier**
+8. **Driver verifier**
    - Examine the driver verifier setting with `!verifier`
-   - if verifier is active, check which drivers are verified with `verifier 1` and check whether they make sense
-   - if verifier is active use the data collected by verifier in crash investigation
+   - If verifier is active, check which drivers are verified with `!verifier 1` and check whether they make sense
+   - If verifier is active, use the data collected by verifier in crash investigation
 
 9. **Advanced Commands to Use**
    - `!irp` - Analyze I/O Request Packets
