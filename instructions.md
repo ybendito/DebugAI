@@ -94,6 +94,7 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - `lmvm mcupdate_*` - Microcode update module information
    - `r @$prcb; dt nt!_KPRCB @$prcb` - Processor Control Block details
    - `!reg q \\registry\\machine\\System\\ControlSet001\\Control\\ComputerName\\ActiveComputerName` - read computer name
+   - **Storage stack** — see [Storage Stack Analysis (storagekd)](#storage-stack-analysis-storagekd) below
 
 ## Analysis Workflow
 
@@ -106,6 +107,44 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
 7. **CPU and Microcode Analysis**: Gather processor and microcode information
 8. **Documentation Check**: Cross-reference with MS documentation
 9. **Root Cause Synthesis**: Formulate a technical explanation of WHY the crash occurred using only evidence. If you don't know or cannot reach the conclusion, tell so
+
+## Storage Stack Analysis (storagekd)
+
+When the faulting stack involves **storport**, **disk**, **Raid**, or other storage/DMA completion paths, use the **Storage KD extension**
+
+### Setup
+
+1. List commands: `!storagekd.help` (works without explicit load)
+2. **Load the extension before subcommands** (required in cdb):
+   ```
+   .load storagekd
+   ```
+   Without `.load storagekd`, commands like `!storadapter` may fail with `No export storadapter found` even though help text is available.
+
+### Key commands
+
+| Command | Purpose |
+|---------|---------|
+| `!storadapter` | Lists all StorPort adapters: driver name, device object, **adapter extension**, state |
+| `!storunit` | Lists all StorPort disk units (or pass a unit address — see `!storhelp`) |
+| `!storsrb <address>` | Dump SCSI/STORAGE request block details |
+| `!storlogirp` / `!storloglist` / `!storlogsrb` | StorPort internal log (see `!storhelp <cmd>`) |
+| `!storclass` | ClassPnp class devices |
+
+Full syntax: `!storhelp` (after `.load storagekd`).
+
+### Workflow for storport crashes
+
+1. From `.trap` / `kv`, note **unit extension** (`RaidUnitCompleteRequest` first arg) and **adapter extension** (often `[unit+0xD8]`
+2. Run `.load storagekd` then **`!storadapter`**.
+3. Match the **adapter extension address** from the stack to the table row — that gives the **exact miniport driver** (`viostor`, `vioscsi`, `storahci`, etc.).
+4. Do **not** infer miniport from `lm` alone — multiple storage drivers are often loaded simultaneously (e.g. VirtIO **and** AHCI on the same guest).
+5. Optionally run `!storunit`, `!storsrb`, `!devstack` on the identified device object for IRP/SRB context.
+
+### Output requirements
+
+- If storage stack is involved, include **`!storadapter`** output (or the matched row) in `thinking.log` and the report.
+- State the **identified miniport driver** only when proven by extension address match (or equivalent storagekd output), not by guest type or loaded-module guesswork.
 
 ## CPU and Microcode Analysis
 
@@ -183,6 +222,7 @@ The first paragraph of the output should include
 
 If virtio drivers present, collect their driver's date information
 If `!virtio.hv` command (from virtio extension) is available, include it's output
+If the crash involves the storage stack, include `!storadapter` output (after `.load storagekd`) and the matched miniport driver
 
 Provide analysis that:
 - Identifies the specific technical root cause
