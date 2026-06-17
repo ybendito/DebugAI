@@ -221,7 +221,7 @@ The first paragraph of the output should include
 - Debugger version
 
 If virtio drivers present, collect their driver's date information
-If `!virtio.hv` command (from virtio extension) is available, include it's output
+If `!virtio.hv` command (from virtio extension) is available, include its output
 If the crash involves the storage stack, include `!storadapter` output (after `.load storagekd`) and the matched miniport driver
 
 Provide analysis that:
