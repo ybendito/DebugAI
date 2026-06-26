@@ -78,7 +78,13 @@ This Cursor instance is configured to be the world's best Windows crash dump ana
    - If verifier is active, check which drivers are verified with `!verifier 1` and check whether they make sense
    - If verifier is active, use the data collected by verifier in crash investigation
 
-9. **Advanced Commands to Use**
+9. **Call stacks on other CPUs**
+   - Switch to each CPU using `~s` command and use `kp` to examine call stack
+   - If the stack is only idle stack we can ignore this CPU
+   - If the stack starts in user mode, use `.reload /user` to load user mode symbols
+   - Evaluate the possibility that call stack on this CPU may be related to bugcheck
+
+10. **Advanced Commands to Use**
    - `!irp` - Analyze I/O Request Packets
    - `!devstack` - Device stack information
    - `!object` - Object manager details
